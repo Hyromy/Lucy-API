@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from . import models
+from .models import (
+    Guild,
+)
 
-admin.site.register(models.Guild)
-admin.site.register(models.DeletedGuild)
+admin.site.register(Guild)

@@ -1,80 +1,66 @@
-from aiohttp import ClientSession
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
-from json import loads, JSONDecodeError
-from json import loads, JSONDecodeError
 from os import getenv
+from django.shortcuts import redirect
+from django.http import (
+    HttpRequest,
+    HttpResponseRedirect,
+    JsonResponse,
+)
+from requests import get, post
+from django.contrib.auth.models import User
 
-@csrf_exempt
-@require_POST
-async def discord(request):
-    try:
-        data = loads(request.body)
-    except JSONDecodeError:
-        return JsonResponse(
-            {
-                "error": "Invalid JSON",
-                "message": "The request body must be valid JSON."
-            },
-            status = 400
-        )
-    
-    code = data.get("code")
-    
-    origin = request.META.get('HTTP_ORIGIN') or request.META.get('HTTP_REFERER', '').rstrip('/')
-    if origin:
-        redirect_uri = f"{origin}/{getenv('FRONTEND_URL_ENDPOINT', 'auth/callback')}"
-    else:
-        redirect_uri = (
-            ("http://localhost:5173" if settings.DEBUG else getenv("FRONTEND_URL", "http://localhost:5173")) + 
-            "/" + getenv("FRONTEND_URL_ENDPOINT", "auth/callback")
-        )
+def discord_login(request) -> HttpResponseRedirect:
+    auth_url = (
+        f"https://discord.com/api/oauth2/authorize"
+        f"?client_id={getenv("DISCORD_CLIENT_ID")}"
+        f"&redirect_uri={getenv("DISCORD_REDIRECT_URI")}"
+        f"&response_type=code"
+        f"&scope=identify"
+    )
 
+    return redirect(auth_url)
+
+def discord_callback(request: HttpRequest) -> JsonResponse:
+    code = request.GET.get("code")
     if not code:
-        return JsonResponse(
-            {
-                "error": "Missing code",
-                "message": "The 'code' parameter is required in the request body."
-            },
-            status = 400
-        )
+        return JsonResponse({"error": "No code provided"}, status = 400)
 
-    origin = (request.META.get('HTTP_ORIGIN') or request.META.get('HTTP_REFERER', '')).rstrip('/')
-    endpoint = getenv('FRONTEND_URL_ENDPOINT', 'auth/callback').lstrip('/')
-    if origin:
-        redirect_uri = f"{origin}/{endpoint}"
-    else:
-        localhost = "http://localhost:5173"
-        redirect_uri = (
-            (localhost if settings.DEBUG else getenv("FRONTEND_URL", localhost)) + "/" + endpoint
-        )
+    data = {
+        "client_id": getenv("DISCORD_CLIENT_ID"),
+        "client_secret": getenv("DISCORD_CLIENT_SECRET"),
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": getenv("DISCORD_REDIRECT_URI"),
+    }
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
 
-    async with ClientSession() as session:
-        async with session.post(
-            "https://discord.com/api/oauth2/token",
-            data = {
-                "client_id": getenv("DISCORD_CLIENT_ID"),
-                "client_secret": getenv("DISCORD_CLIENT_SECRET"),
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": redirect_uri
-            },
-            headers = {
-                "Content-Type": "application/x-www-form-urlencoded"
-            }
-        ) as resp:
-            if resp.status != 200:
-                return JsonResponse(
-                    {
-                        "error": "Failed to retrieve token",
-                        "message": "Could not retrieve access token from Discord.",
-                        "response": await resp.json()
-                    },
-                    status = resp.status
-                )
-            
-            return JsonResponse(await resp.json())
+    response = post("https://discord.com/api/oauth2/token",
+        data = data,
+        headers = headers
+    )
+    token_json = response.json()
+    access_token = token_json.get("access_token")
+
+    if not access_token:
+        return JsonResponse(token_json, status = 400)
+
+    return _process_token_from_discord(access_token)
+
+def _process_token_from_discord(access_token: str) -> JsonResponse:
+    user_response = get("https://discord.com/api/users/@me",
+        headers = {"Authorization": f"Bearer {access_token}"}
+    )
+    user_json = user_response.json()
+
+    if "username" not in user_json:
+        return JsonResponse(user_json, status = 400)
+
+    User.objects.get_or_create(
+        username = user_json["username"],
+        defaults = {
+            "first_name": user_json["username"]
+        }
+    )
+
+    return JsonResponse(user_json)

@@ -2,26 +2,67 @@ name: Push Docker Image
 
 on:
   workflow_dispatch:
-  
   push:
     branches:
       - main
 
 jobs:
-  build:
+  quality-gate:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root --with dev,testing
+
+      - name: Run Lint
+        run: poetry run ruff check .
+
+      - name: Run Tests
+        run: poetry run pytest
+
+  build:
+    needs: quality-gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set image tag
-        id: tag
-        run: echo "TAG=$(date +'%y.%m.%d')" >> $GITHUB_ENV
+        run: |
+          DATE_TAG=$(date +'%y.%m.%d')
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "TAG=${DATE_TAG}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> "$GITHUB_ENV"
 
       - name: Build Docker Image
         run: |
-          docker build -t '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:${{ env.TAG }}' -t '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:latest' .
+          docker build \
+            -t '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:'"$TAG" \
+            -t '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:latest' \
+            .
 
       - name: Login to Docker
         uses: docker/login-action@v3
@@ -31,5 +72,5 @@ jobs:
 
       - name: Push Docker Image
         run: |
-          docker push '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:${{ env.TAG }}'
+          docker push '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:'"$TAG"
           docker push '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:latest'

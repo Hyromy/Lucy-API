@@ -6,11 +6,15 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = getenv("DJANGO_SECRET_KEY", "secret")
+SECRET_KEY = getenv("DJANGO_SECRET_KEY", "django-insecure-dev-key-change-it-in-prod")
 
-DEBUG = getenv("PRODUCTION", "False") != "True"
+DEBUG = getenv("PRODUCTION") != "True"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"] if DEBUG else [host.strip() for host in getenv("HOSTS", "*").split(",")]
+ALLOWED_HOSTS = ["*"]
+
+if not DEBUG:
+    ALLOWED_HOSTS = [host.strip() for host in getenv("HOSTS", "").split(",") if host.strip()]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -20,19 +24,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    "corsheaders",
+    'corsheaders',
+    'rest_framework',
 
-    "rest_framework",
-
-    "apps.api",
-    "apps._auth",
+    'apps.api',
+    'apps._auth',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -59,12 +62,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
-    } if DEBUG else {
+if not DEBUG:
+    DATABASES['default'] = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': getenv("PG_DB", "postgres"),
         'USER': getenv("PG_USER", "postgres"),
@@ -72,7 +79,7 @@ DATABASES = {
         'HOST': getenv("PG_HOST", "localhost"),
         'PORT': getenv("PG_PORT", "5432"),
     }
-}
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -89,70 +96,54 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
 }
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
-    },
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
 }
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://lucy.hyromy.xyz",
+    "http://127.0.0.1:5173",
 ]
+
+if not DEBUG:    
+    CORS_ALLOWED_ORIGINS = [
+        host.strip() for host in getenv("CORS_ALLOWED", "").split(",") if host.strip()
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
-# Security settings for production
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    CSRF_TRUSTED_ORIGINS = [
-        'https://api.lucy.hyromy.xyz',
-        'https://lucy.hyromy.xyz',
-    ]
+    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = [
+        host.strip() for host in getenv("CSRF_TRUSTED", "").split(",") if host.strip()
+    ]
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

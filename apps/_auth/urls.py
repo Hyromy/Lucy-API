@@ -1,6 +1,15 @@
 from django.urls import path
-from . import views
+
+from .views import (
+    discord_login,
+    discord_callback,
+)
 
 urlpatterns = [
-    path("discord/", views.discord)
+    path("discord/login/", discord_login,
+        name = "discord_login"
+    ),
+    path("discord/callback/", discord_callback,
+        name = "discord_callback"
+    ),
 ]

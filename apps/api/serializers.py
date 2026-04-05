@@ -4,4 +4,12 @@ from . import models
 class GuildSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Guild
-        fields = '__all__'
+        fields = [
+            "id",
+            "name",
+            "lang",
+            "joined_at",
+        ]
+        read_only_fields = [
+            "joined_at",
+        ]

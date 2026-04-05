@@ -1,120 +1,138 @@
-# Lucy Rest
+# Lucy API
 
-API REST con Django Rest Framework para [Lucy](https://github.com/Hyromy/Lucy)
+Backend REST para el proyecto Lucy (Bot de Discord y Web)
 
-![Django](https://img.shields.io/badge/Django-6.0-green?logo=django)
-![DRF](https://img.shields.io/badge/DRF-3.16.1-red?logo=django)
+![Django](https://img.shields.io/badge/Django-6.0.3-green?logo=django)
+![DRF](https://img.shields.io/badge/DRF-3.15.2-red?logo=django)
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
+![Poetry](https://img.shields.io/badge/Poetry-Package_Manager-blue?logo=poetry)
 ![Docker](https://img.shields.io/badge/Docker-Container-blue?logo=docker)
 
 ## Índice
-- [Lucy Rest](#lucy-rest)
+- [Lucy API](#lucy-api)
   - [Índice](#índice)
-  - [Estructura del proyecto](#estructura-del-proyecto)
-  - [Variables de entrono](#variables-de-entrono)
-  - [Despliegue](#despliegue)
-    - [Local](#local)
+  - [Variables de entorno](#variables-de-entorno)
+  - [Instalación](#instalación)
+    - [Poetry (Recomendado)](#poetry-recomendado)
+    - [Pip](#pip)
     - [Docker](#docker)
+  - [Ejecución](#ejecución)
+    - [Desarrollo](#desarrollo)
+    - [Producción (Docker)](#producción-docker)
+  - [Despliegue y Mantenimiento](#despliegue-y-mantenimiento)
+    - [Base de Datos](#base-de-datos)
+    - [Superusuario](#superusuario)
+  - [Diagnóstico y recuperación](#diagnóstico-y-recuperación)
+    - [Logs](#logs)
+    - [Arranque parcial](#arranque-parcial)
+    - [Estado de la API](#estado-de-la-api)
+    - [Sincronización de Base de Datos](#sincronización-de-base-de-datos)
 
-## Estructura del proyecto
+## Variables de entorno
 
-Se posee una estructura típica de un proyecto de Django
-
-```sh
-app/                  # aplicación principal
-├── migrations/       # migraciones
-│
-├── models.py         # modelos
-├── serializers.py    # serializadores
-├── urls.py           # rutas de aplicación
-└── views.py          # enpoints
-
-project/              # proyecto principal
-├── settings.py       # configuración del proyecto
-└── urls.py           # rutas
-
-manage.py             # script de comandos Django
-requirements.txt      # dependencias
-```
-
-## Variables de entrono
-
-Aunque el proyecto puede funcionar sin establecer ninguna variable de entorno, puedes configurar el `.env` con las variables de entorno disponibles.
-
-| Clave | Valor por defecto | Descripción |
-| - | - | - |
-| `PRODUCTION` | `False` | Establece si el modo es de producción |
-| `DJANGO_SECRET_KEY` | `"secret"` | Secret de seguridad |
-| `PG_DB` | `"postgres"` | Base de datos PostgreSQL |
-| `PG_USER` | `"postgres"` | Usuario de PostgreSQL |
-| `PG_PASS` | `"postgres"` | Contraseña de PostgreSQL |
-| `PG_HOST` | `"localhost"` | Host de PostgreSQL |
-| `PG_POST` | `5432` | Puerto de PostgreSQL |
-| `SUPERUSER_USERNAME` | `Admin` | Super usuario de la aplicación |
-| `SUPERUSER_PASSWORD` | `Admin123` | Contraseña del super usuario |
-| `DISCORD_CLIENT_ID` | `None` | Id de cliente de discord de autenticación |
-| `DISCORD_CLIENT_SECRET` | `None` | Secret de cliente de discord de autenticación |
-| `FRONTEND_URL_ENDPOINT` | `"auth/callback"` | Ruta de redirección de autenticación |
-| `DEV_DISCORD_BOT_TOKEN` | `None` | Token de bot de discord de desarrollo |
-| `PRO_DISCORD_BOT_TOKEN` | `None` | Token de bot de discord de producción |
-
-## Despliegue
-
-### Local
-
-1. Entorno virtual
-   
-   Crea un entorno virtual, como ejemplo se usa el módulo `venv`.
-   ```sh
-   py -m venv env
-   ```
-
-   Activa el entorno virtual.
-   ```sh
-   .\env\Scripts\activate     # Windows
-   ```
-
-2. Dependencias
-   
-   Instala las [dependencias](./requirements.txt).
-   ```sh
-   pip install -r requirements.txt
-   ```
-
-3. Migraciones
-   
-   Aplica las migraciones.
-   ```sh
-   py manage.py migrate
-   ```
-
-4. Creación de super usuario
-
-   Crea un super usuario con [create_super_user.py](./create_super_user.py). Puedes configurar otro usuario por defecto con las claves `SUPERUSER_USERNAME` y `SUPERUSER_PASSWORD`
-   ```bash
-   py create_super_user.py
-   ```
-
-El proyecto se ejecuta en el puerto `8000` pero puedes especificar otro.
+Para configurar el entorno, copia el archivo `.env.example` como `.env` en la raíz del proyecto.
 
 ```sh
-py manage.py runserver          # port 8000
-
-py manage.py runserver 7001     # port 7001
+cp .env.example .env
 ```
 
----
+El proyecto detectará automáticamente si está en modo desarrollo o producción mediante la variable `PRODUCTION`.
+
+## Instalación
+
+### Poetry (Recomendado)
+
+1. Instala las dependencias (el entorno virtual se gestiona solo):
+   ```sh
+   poetry install
+   ```
+
+2. (Opcional) Activa el entorno para ejecutar comandos directos de Django:
+   ```sh
+   poetry shell
+   ```
+
+### Pip
+
+Si prefieres usar un entorno virtual tradicional con `pip`:
+
+1. Crea y activa el entorno virtual:
+   ```sh
+   python -m venv .venv
+   source .venv/bin/activate  # Linux/macOS
+   .venv\Scripts\activate     # Windows
+   ```
+
+2. Instala Poetry (necesario para gestionar las dependencias del `pyproject.toml`):
+   ```sh
+   pip install poetry
+   ```
+
+3. Instala las dependencias:
+   ```sh
+   poetry install
+   ```
 
 ### Docker
 
-Puedes construir una imagen y contenedor con el [Dockerfile](./Dockerfile).
+Construye la imagen optimizada para el VPS:
 ```sh
-docker build -t app_image .
-
-docker run --name app_container -p 8000:8000 app_image
+docker build -t lucy-api .
 ```
 
-Por último puedes ejecutar un entorno pre-producción sin ninguna [variable de entorno](#variables-de-entrono).
+## Ejecución
+
+### Desarrollo
+Para iniciar el servidor de desarrollo de Django:
 ```sh
-docker compose up
+poetry run python manage.py runserver
 ```
+
+### Producción (Docker)
+El contenedor arrancará automáticamente con Gunicorn, ejecutará migraciones y recolectará estáticos:
+```sh
+docker run -p 8000:8000 --env-file .env lucy-api
+```
+
+## Despliegue y Mantenimiento
+
+### Base de Datos
+- **Local:** Utiliza SQLite (`db.sqlite3`) de forma automática.
+- **Producción:** Configura las variables `PG_...` en el `.env` para conectar con PostgreSQL.
+
+### Superusuario
+Para crear un administrador en Docker, debes hacerlo manualmente una vez que el contenedor esté en ejecución:
+
+1. Identifica el ID o nombre del contenedor:
+   ```sh
+   docker ps
+   ```
+
+2. Ejecuta el comando interactivo:
+   ```sh
+   docker exec -it <container_id> python manage.py createsuperuser
+   ```
+
+Sigue las instrucciones en la terminal para configurar el usuario, correo y contraseña.
+
+## Diagnóstico y recuperación
+
+### Logs
+- En **Desarrollo**, los logs se muestran directamente en la terminal.
+- En **Producción**, Django y Gunicorn están configurados para enviar logs a `stdout` (consola de Docker). Puedes consultarlos con:
+  ```sh
+  docker logs -f <container_id>
+  ```
+
+### Arranque parcial
+Si el contenedor o el servidor no arranca, lo más común es una variable de entorno faltante. Revisa el archivo `.env` contrastándolo con `.env.example`.
+
+### Estado de la API
+Para verificar que la API está operativa, puedes acceder al endpoint de salud o al panel de administración: `http://localhost:8000/admin/`
+
+### Sincronización de Base de Datos
+Si tras un `git pull` el proyecto falla, asegúrate de ejecutar las migraciones:
+```sh
+poetry run python manage.py migrate
+```
+En Docker, esto se hace automáticamente al arrancar el contenedor.

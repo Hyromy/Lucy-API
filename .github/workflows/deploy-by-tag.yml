@@ -1,20 +1,19 @@
-name: Deploy in VPS
+name: Deploy by Tag (Reusable)
 
 on:
-  workflow_dispatch:
-
-  workflow_run:
-    workflows: ["Push Docker Image"]
-    types:
-      - completed
+  workflow_call:
+    inputs:
+      image_tag:
+        description: Docker image tag to deploy
+        required: true
+        type: string
 
 jobs:
-  deploy_latest:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy latest image to VPS
+      - name: Deploy selected image tag to VPS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ vars.VPS_HOST }}
@@ -28,7 +27,8 @@ jobs:
 
             docker stop ${{ vars.DOCKER_CONTAINER }} || true
             docker rm ${{ vars.DOCKER_CONTAINER }} || true
-            docker pull ${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:latest
+
+            docker pull ${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:${{ inputs.image_tag }}
 
             NETWORK_ARGS=""
             if [ -n "${{ vars.DOCKER_NETWORK }}" ]; then
@@ -49,4 +49,4 @@ jobs:
               -p '${{ vars.DOCKER_HOST_PORT }}:8000' \
               --restart unless-stopped \
               $NETWORK_ARGS \
-              '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:latest'
+              '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:${{ inputs.image_tag }}'
