@@ -63,6 +63,8 @@ Consulte la configuración de [variables de entorno](./virtual-env.md) para más
 
 El proyecto usa [poetry](https://python-poetry.org) como gestor de paquetes, en caso de no contar con el, también es posible instalar las dependencias mediante pip.
 
+A fin de evitar duplicar las dependencias, se omite el archivo `requirements.txt`. Es necesario que la instalación mediante pip, instale la dependencia de poetry para interpretar correctamente las [dependencias](../pyproject.toml).
+
 ### Poetry (recomendado)
 
 1. Instalación de dependencias

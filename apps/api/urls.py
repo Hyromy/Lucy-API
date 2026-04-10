@@ -7,4 +7,5 @@ router.register(r'guilds', views.GuildViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path("health/", views.health_check)
 ]
