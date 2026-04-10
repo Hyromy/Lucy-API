@@ -6,9 +6,12 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = getenv("DJANGO_SECRET_KEY", "this_key_is_insecure")
-
 DEBUG = getenv("PRODUCTION", "False") != "True"
+
+SECRET_KEY = (
+    getenv("DJANGO_SECRET_KEY", "this_key_is_insecure")
+    if DEBUG else environ["DJANGO_SECRET_KEY"]
+)
 
 ALLOWED_HOSTS = ["*"]
 
@@ -148,3 +151,17 @@ if not DEBUG:
     ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+    SECURE_REFERRER_POLICY = "same-origin"

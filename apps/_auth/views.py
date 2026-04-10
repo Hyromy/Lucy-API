@@ -5,7 +5,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from requests import get, post
+from requests import get, post, RequestException
 from django.contrib.auth.models import User
 
 def discord_login(request) -> HttpResponseRedirect:
@@ -35,10 +35,16 @@ def discord_callback(request: HttpRequest) -> JsonResponse:
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    response = post("https://discord.com/api/oauth2/token",
-        data = data,
-        headers = headers
-    )
+    try:
+        response = post("https://discord.com/api/oauth2/token",
+            data = data,
+            headers = headers,
+            timeout = 10
+        )
+        response.raise_for_status()
+    except RequestException as e:
+        return JsonResponse({"error": "Failed to exchange token", "details": str(e)}, status = 502)
+
     token_json = response.json()
     access_token = token_json.get("access_token")
 
@@ -48,9 +54,15 @@ def discord_callback(request: HttpRequest) -> JsonResponse:
     return _process_token_from_discord(access_token)
 
 def _process_token_from_discord(access_token: str) -> JsonResponse:
-    user_response = get("https://discord.com/api/users/@me",
-        headers = {"Authorization": f"Bearer {access_token}"}
-    )
+    try:
+        user_response = get("https://discord.com/api/users/@me",
+            headers = {"Authorization": f"Bearer {access_token}"},
+            timeout = 10
+        )
+        user_response.raise_for_status()
+    except RequestException as e:
+        return JsonResponse({"error": "Failed to fetch user data", "details": str(e)}, status = 502)
+
     user_json = user_response.json()
 
     if "username" not in user_json:
