@@ -23,7 +23,7 @@ EXPOSE 8000
 CMD ["sh", "-c", "\
     python manage.py migrate --no-input && \
     python manage.py collectstatic --no-input && \
-    gunicorn lucy_api.wsgi:application \
+    gunicorn project.wsgi:application \
         --bind 0.0.0.0:8000 \
         --workers 2 \
         --threads 4 \

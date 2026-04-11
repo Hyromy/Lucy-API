@@ -118,3 +118,11 @@ Si el workflow de `rollback.yml` falla o no se puede usar, se puede revertir man
 docker run -d --name lucy_api_app [PARAMETROS] lucy_api:vX.X.X
 ```
 
+Pasos recomendados para un rollback seguro:
+
+1. Identificar el último tag estable (`vX.X.X`) ya probado.
+2. Detener y eliminar el contenedor actual.
+3. Levantar la versión anterior con las mismas variables de entorno.
+4. Validar `api/health/` y revisar logs por al menos 2-3 minutos.
+
+Para errores comunes y su resolución, consultar [troubleshooting.md](./troubleshooting.md).

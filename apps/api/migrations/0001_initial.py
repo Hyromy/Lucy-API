@@ -4,20 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Guild',
+            name="Guild",
             fields=[
-                ('id', models.BigIntegerField(primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=100)),
-                ('lang', models.CharField(choices=[('en', 'English'), ('es', 'Spanish')], default='en', max_length=2)),
-                ('joined_at', models.DateTimeField(auto_now_add=True)),
+                ("id", models.BigIntegerField(primary_key=True, serialize=False)),
+                ("name", models.CharField(max_length=100)),
+                (
+                    "lang",
+                    models.CharField(
+                        choices=[("en", "English"), ("es", "Spanish")], default="en", max_length=2
+                    ),
+                ),
+                ("joined_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
     ]

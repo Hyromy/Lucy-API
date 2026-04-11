@@ -6,10 +6,6 @@ from .views import (
 )
 
 urlpatterns = [
-    path("discord/login/", discord_login,
-        name = "discord_login"
-    ),
-    path("discord/callback/", discord_callback,
-        name = "discord_callback"
-    ),
+    path("discord/login/", discord_login, name="discord_login"),
+    path("discord/callback/", discord_callback, name="discord_callback"),
 ]

@@ -16,6 +16,10 @@ El presente documento recopila los problemas más frecuentes encontrados durante
     - [Archivos estáticos no se visualizan](#archivos-estáticos-no-se-visualizan)
   - [Dependencias](#dependencias)
     - [Errores de Poetry](#errores-de-poetry)
+  - [Operación en producción](#operación-en-producción)
+    - [Error de `DJANGO_SECRET_KEY` al iniciar](#error-de-django_secret_key-al-iniciar)
+    - [Falla de callback en login OAuth de Discord](#falla-de-callback-en-login-oauth-de-discord)
+    - [Health check no responde en `api/health/`](#health-check-no-responde-en-apihealth)
 
 ## Base de Datos
 
@@ -47,7 +51,7 @@ python manage.py migrate
 Este es el error más común al configurar el OAuth2 de Discord.
 
 **Solución:**
-Asegúrate de que la URL en `DISCORD_REDIRECT_URI` coincida **caracter por caracter** con la configurada en el portal de Discord. 
+Asegúrate de que la URL en `DISCORD_REDIRECT_URI` coincida **caracter por caracter** con la configurada en el portal de Discord.
 - Revisa si falta o sobra una barra diagonal `/` al final.
 - Verifica si estás usando `http` en lugar de `https`.
 
@@ -90,3 +94,28 @@ Si al ejecutar `poetry install` obtienes errores de resolución de dependencias.
    poetry lock --no-update
    ```
 2. Asegúrate de estar usando Python 3.12 como se especifica en los [requerimientos](./onboarding.md).
+
+## Operación en producción
+
+### Error de `DJANGO_SECRET_KEY` al iniciar
+Puede ocurrir cuando la variable de entorno no está definida o tiene un valor inválido.
+
+**Solución:**
+1. Configura `DJANGO_SECRET_KEY` en el entorno del contenedor o servidor.
+2. Recrea el contenedor y valida el arranque.
+
+### Falla de callback en login OAuth de Discord
+Suele ocurrir cuando hay desalineación entre variables locales y la configuración del Discord Developer Portal.
+
+**Solución:**
+1. Verifica `DISCORD_REDIRECT_URI` carácter por carácter.
+2. Confirma `DISCORD_CLIENT_ID` y `DISCORD_CLIENT_SECRET`.
+3. Reinicia el servicio después de corregir variables.
+
+### Health check no responde en `api/health/`
+Generalmente se debe a que el puerto no está publicado o el contenedor está caído.
+
+**Solución:**
+1. Valida mapeo de puertos (`-p 8000:8000`).
+2. Revisa estado del contenedor con `docker ps`.
+3. Inspecciona logs con `docker logs <container>`.

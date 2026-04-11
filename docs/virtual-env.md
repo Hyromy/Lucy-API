@@ -43,7 +43,7 @@ Hosts permitidos para ser el anfitrión del proyecto. Puede definirse más de un
 _Por defecto, en desarrollo se permiten todos los hosts_
 
 > Ejemplo
-> 
+>
 > HOSTS=site.example.com, other.site.com
 
 ### `CORS_ALLOWED`

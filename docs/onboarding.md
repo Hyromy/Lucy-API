@@ -12,8 +12,10 @@ A modo de guía de inicio rápido, se recomienda consultar las secciones de [req
   - [Estructura del proyecto](#estructura-del-proyecto)
   - [Variables de entorno](#variables-de-entorno)
   - [Instalación](#instalación)
-    - [Poetry (recomendado)](#poetry-recomendado)
-    - [Pip](#pip)
+    - [Dependencias](#dependencias)
+      - [Poetry (recomendado)](#poetry-recomendado)
+      - [Pip](#pip)
+    - [Pre-commit](#pre-commit)
   - [Preparación y ejecución](#preparación-y-ejecución)
   - [Tests y revisiones](#tests-y-revisiones)
   - [Mantenimiento y correcciones](#mantenimiento-y-correcciones)
@@ -65,7 +67,9 @@ El proyecto usa [poetry](https://python-poetry.org) como gestor de paquetes, en 
 
 A fin de evitar duplicar las dependencias, se omite el archivo `requirements.txt`. Es necesario que la instalación mediante pip, instale la dependencia de poetry para interpretar correctamente las [dependencias](../pyproject.toml).
 
-### Poetry (recomendado)
+### Dependencias
+
+#### Poetry (recomendado)
 
 1. Instalación de dependencias
    ```sh
@@ -77,7 +81,7 @@ A fin de evitar duplicar las dependencias, se omite el archivo `requirements.txt
    poetry shell
    ```
 
-### Pip
+#### Pip
 
 1. Creación de entorno virtual
    ```sh
@@ -99,6 +103,27 @@ A fin de evitar duplicar las dependencias, se omite el archivo `requirements.txt
    ```sh
    poetry install
    ```
+
+### Pre-commit
+
+Se utiliza para automatizar la revisión de formato y calidad de código antes de cada commit, asegurando que el historial de Git se mantenga limpio.
+
+1. **Instalación de los hooks:**
+   ```sh
+   pre-commit install
+   ```
+
+A partir de este momento, cada vez que ejecutes `git commit`, se validarán automáticamente:
+- Espacios en blanco innecesarios.
+- Finales de archivo correctos.
+- Formato y errores de Python mediante **Ruff**.
+
+Si el pre-commit encuentra errores, detendrá el commit para que los revises (o los corregirá automáticamente si es posible).
+
+Si necesitas ejecutarlo manualmente sobre todos los archivos sin hacer un commit:
+```sh
+pre-commit run --all-files
+```
 
 ## Preparación y ejecución
 
