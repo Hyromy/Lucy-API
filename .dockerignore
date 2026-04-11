@@ -62,3 +62,4 @@ coverage.xml
 Dockerfile
 docker-compose.yml
 .dockerignore
+.pre-commit-config.yaml

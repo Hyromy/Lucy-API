@@ -3,8 +3,6 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
-router.register(r'guilds', views.GuildViewSet)
+router.register(r"guilds", views.GuildViewSet)
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = [path("", include(router.urls)), path("health/", views.health_check)]

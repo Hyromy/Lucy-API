@@ -5,7 +5,7 @@ from apps.api import urls as api_urls
 from apps._auth import urls as auth_urls
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', include(api_urls)),
-    path('auth/', include(auth_urls)),
+    path("admin/", admin.site.urls),
+    path("api/", include(api_urls)),
+    path("auth/", include(auth_urls)),
 ]

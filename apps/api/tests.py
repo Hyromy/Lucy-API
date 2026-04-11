@@ -8,26 +8,25 @@ from .models import (
     Guild,
 )
 
+
 @pytest.fixture
 def sample_guilds(db):
     return [
-        Guild.objects.create(id = 123456789, name = "Test Guild 1"),
-        Guild.objects.create(id = 987654321, name = "Test Guild 2"),
-        Guild.objects.create(id = 555555555, name = "Test Guild 3", lang = "es"),
+        Guild.objects.create(id=123456789, name="Test Guild 1"),
+        Guild.objects.create(id=987654321, name="Test Guild 2"),
+        Guild.objects.create(id=555555555, name="Test Guild 3", lang="es"),
     ]
+
 
 @pytest.mark.django_db
 class TestGuildAPI:
     def setup_method(self):
         self.client = APIClient()
         self.url = "/api/guilds/"
-        self.user = User.objects.create_user(
-            username = "testuser",
-            password = "password"
-        )
+        self.user = User.objects.create_user(username="testuser", password="password")
 
     def test_list_guilds(self, sample_guilds):
-        """ Test that the API returns a list of guilds. """
+        """Test that the API returns a list of guilds."""
 
         response = self.client.get(self.url)
 
@@ -35,7 +34,7 @@ class TestGuildAPI:
         assert len(response.data) == len(sample_guilds)
 
     def test_get_guild(self, sample_guilds):
-        """ Test that the API returns a single guild by ID. """
+        """Test that the API returns a single guild by ID."""
 
         guild = sample_guilds[0]
         response = self.client.get(f"{self.url}{guild.id}/")
@@ -47,16 +46,16 @@ class TestGuildAPI:
         assert response.data["joined_at"] == guild.joined_at.isoformat().replace("+00:00", "Z")
 
     def test_get_nonexistent_guild(self):
-        """ Test that the API returns a 404 for a non-existent guild. """
+        """Test that the API returns a 404 for a non-existent guild."""
 
         response = self.client.get(f"{self.url}999999999/")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_create_guild(self):
-        """ Test that the API can create a new guild. """
+        """Test that the API can create a new guild."""
 
-        self.client.force_authenticate(user = self.user)
+        self.client.force_authenticate(user=self.user)
 
         data = {
             "id": 111111111,
@@ -70,32 +69,30 @@ class TestGuildAPI:
         assert response.data["lang"] == "en"
 
     def test_create_guild_without_authentication(self):
-        """ Test that the API requires authentication to create a guild. """
+        """Test that the API requires authentication to create a guild."""
 
-        response = self.client.post(self.url,
-            {"id": 222222222, "name": "Unauthorized Guild"},
-            format="json"
+        response = self.client.post(
+            self.url, {"id": 222222222, "name": "Unauthorized Guild"}, format="json"
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_create_duplicate_guild(self, sample_guilds):
-        """ Test that the API returns a 400 when trying to create a guild with an ID that already exists. """
+        """Test that the API returns a 400 when trying to create a guild with an ID that already exists."""
 
-        self.client.force_authenticate(user = self.user)
+        self.client.force_authenticate(user=self.user)
 
         existing_guild = sample_guilds[0]
-        response = self.client.post(self.url, 
-            {"id": existing_guild.id, "name": "Duplicate Guild"},
-            format="json"
+        response = self.client.post(
+            self.url, {"id": existing_guild.id, "name": "Duplicate Guild"}, format="json"
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_update_guild(self, sample_guilds):
-        """ Test that the API can update an existing guild. """
+        """Test that the API can update an existing guild."""
 
-        self.client.force_authenticate(user = self.user)
+        self.client.force_authenticate(user=self.user)
 
         guild = sample_guilds[0]
         data = {
@@ -110,12 +107,12 @@ class TestGuildAPI:
         assert response.data["lang"] == data["lang"]
 
     def test_delete_guild(self, sample_guilds):
-        """ Test that the API can delete a guild. """
+        """Test that the API can delete a guild."""
 
-        self.client.force_authenticate(user = self.user)
+        self.client.force_authenticate(user=self.user)
 
         guild = sample_guilds[0]
         response = self.client.delete(f"{self.url}{guild.id}/")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert not Guild.objects.filter(id = guild.id).exists()
+        assert not Guild.objects.filter(id=guild.id).exists()
