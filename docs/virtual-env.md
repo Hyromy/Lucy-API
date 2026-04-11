@@ -10,6 +10,7 @@ Para configurar manualmente dichas variables, crea una copia del archivo `.env.e
   - [Configuración general](#configuración-general)
     - [`PRODUCTION`](#production)
     - [`DJANGO_SECRET_KEY`](#django_secret_key)
+    - [`USE_SSL`](#use_ssl)
     - [`HOSTS`](#hosts)
     - [`CORS_ALLOWED`](#cors_allowed)
     - [`CSRF_TRUSTED`](#csrf_trusted)
@@ -19,6 +20,8 @@ Para configurar manualmente dichas variables, crea una copia del archivo `.env.e
     - [`PG_PASS`](#pg_pass)
     - [`PG_HOST`](#pg_host)
     - [`PG_PORT`](#pg_port)
+  - [Redis](#redis)
+    - [`REDIS_URL`](#redis_url)
   - [Discord](#discord)
     - [`DISCORD_CLIENT_ID`](#discord_client_id)
     - [`DISCORD_CLIENT_SECRET`](#discord_client_secret)
@@ -36,6 +39,12 @@ _Por defecto, toma el valor de `False`._
 Secret de seguridad para protecciones y criptografía del proyecto. Se recomienda configurar un secret con caracteres combinados y de al menos 50 caracteres de longitud.
 
 _Por defecto, se establece una secret insegura_.
+
+### `USE_SSL`
+
+Indica si se deben forzar el uso de conexiones HTTPS.
+
+_Por defecto, toma el valor de `False`_
 
 ### `HOSTS`
 Hosts permitidos para ser el anfitrión del proyecto. Puede definirse más de uno separandolo por comas (`,`).
@@ -89,6 +98,17 @@ Suele ser `localhost`, una IP o dominio.
 Puerto de la base de datos PostgreSQL.
 
 Suele el `5432`.
+
+## Redis
+
+> [!Warning]
+> Todas las variables de esta sección son obligatorias si el proyecto se ejecuta en modo producción
+
+### `REDIS_URL`
+
+URL de conexión al servidor de Redis. Se utiliza como bus de mensajes para la sincronización en tiempo real (Pub/Sub) entre la API y otros sistemas.
+
+_Por defecto, en desarrollo toma el valor de "redis://localhost:6379/0"_
 
 ## Discord
 

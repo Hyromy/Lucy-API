@@ -39,8 +39,8 @@ docker compose up -d
 La distribución de puertos se encuentra repartida de la siguiente manera
 
 - Backend -> 8000
-- PostgreSQL -> ninguno
-- Redis -> Ninguno
+- PostgreSQL -> 5432
+- Redis -> 6379
 
 ## Despliegue
 

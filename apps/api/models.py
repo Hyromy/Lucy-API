@@ -8,11 +8,14 @@ class Guild(models.Model):
         max_length=2,
         default="en",
         choices=[
-            ("en", "English"),
-            ("es", "Spanish"),
+            ("en", "(EN) English"),
+            ("es", "(ES) Spanish"),
         ],
     )
     joined_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+    version = models.IntegerField(default=1)
 
     def __str__(self):
         return self.name

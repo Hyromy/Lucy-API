@@ -116,3 +116,35 @@ class TestGuildAPI:
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not Guild.objects.filter(id=guild.id).exists()
+
+    def test_update_version_increment(self, sample_guilds):
+        """Test that the version field increments on update."""
+
+        self.client.force_authenticate(user=self.user)
+
+        guild = sample_guilds[0]
+        original_version = guild.version
+
+        data = {
+            "name": "Version Increment Test",
+        }
+        response = self.client.patch(f"{self.url}{guild.id}/", data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["version"] == original_version + 1
+
+    def test_update_at_field(self, sample_guilds):
+        """Test that the updated_at field updates on update."""
+
+        self.client.force_authenticate(user=self.user)
+
+        guild = sample_guilds[0]
+        original_updated_at = guild.updated_at
+
+        data = {
+            "name": "Updated At Field Test",
+        }
+        response = self.client.patch(f"{self.url}{guild.id}/", data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["updated_at"] != original_updated_at.isoformat().replace("+00:00", "Z")

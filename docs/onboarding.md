@@ -46,7 +46,9 @@ El proyecto dispone de la estructura estándar de Django, a continuación se det
   - `_auth/`: Mecanismos de autenticación mediante OAuth2.
   - `api/`: Modelos y serializadores de la API RESTFUL.
 - `docs/`: Documentación detallada del proyecto.
-- `project/`: Configuraciones generales del proyecto
+- `project/`: Configuraciones generales del proyecto.
+  - `config.py`: Configuraciones de variables de entorno.
+  - `settings.py`: Configuraciones de comportamiento.
 - `.env.example`: Plantilla de variables de entorno.
 - `pyproject.toml`: Dependencias del proyecto.
 
