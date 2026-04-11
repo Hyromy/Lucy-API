@@ -1,5 +1,4 @@
 import logging
-from os import getenv
 from django.shortcuts import redirect
 from django.http import (
     HttpRequest,
@@ -8,6 +7,7 @@ from django.http import (
 )
 from requests import get, post, RequestException
 from django.contrib.auth.models import User
+from project.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 def discord_login(request) -> HttpResponseRedirect:
     auth_url = (
         f"https://discord.com/api/oauth2/authorize"
-        f"?client_id={getenv("DISCORD_CLIENT_ID")}"
-        f"&redirect_uri={getenv("DISCORD_REDIRECT_URI")}"
+        f"?client_id={config.DISCORD_CLIENT_ID}"
+        f"&redirect_uri={config.DISCORD_REDIRECT_URI}"
         f"&response_type=code"
         f"&scope=identify"
     )
@@ -30,11 +30,11 @@ def discord_callback(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"error": "No code provided"}, status=400)
 
     data = {
-        "client_id": getenv("DISCORD_CLIENT_ID"),
-        "client_secret": getenv("DISCORD_CLIENT_SECRET"),
+        "client_id": config.DISCORD_CLIENT_ID,
+        "client_secret": config.DISCORD_CLIENT_SECRET,
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": getenv("DISCORD_REDIRECT_URI"),
+        "redirect_uri": config.DISCORD_REDIRECT_URI,
     }
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
 

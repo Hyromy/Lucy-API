@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     PG_HOST: str = "localhost"
     PG_PORT: int = 5432
 
+    DISCORD_CLIENT_ID: Optional[str] = Field(default="")
+    DISCORD_CLIENT_SECRET: Optional[str] = Field(default="")
+    DISCORD_REDIRECT_URI: Optional[str] = Field(default="")
+
     @property
     def is_debug(self) -> bool:
         return not self.PRODUCTION
