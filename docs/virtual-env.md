@@ -14,6 +14,7 @@ Para configurar manualmente dichas variables, crea una copia del archivo `.env.e
     - [`HOSTS`](#hosts)
     - [`CORS_ALLOWED`](#cors_allowed)
     - [`CSRF_TRUSTED`](#csrf_trusted)
+    - [`SESSION_DOMAIN`](#session_domain)
   - [PostgreSQL](#postgresql)
     - [`PG_DB`](#pg_db)
     - [`PG_USER`](#pg_user)
@@ -26,6 +27,9 @@ Para configurar manualmente dichas variables, crea una copia del archivo `.env.e
     - [`DISCORD_CLIENT_ID`](#discord_client_id)
     - [`DISCORD_CLIENT_SECRET`](#discord_client_secret)
     - [`DISCORD_REDIRECT_URI`](#discord_redirect_uri)
+  - [Frontend](#frontend)
+    - [`FRONTEND_URL`](#frontend_url)
+    - [`FRONTEND_AUTH_CALLBACK_URL`](#frontend_auth_callback_url)
 
 
 ## Configuración general
@@ -74,6 +78,20 @@ Generalmente se espera tener los mismos valores que [CORS_ALLOWED](#cors_allowed
 > Ejemplo
 >
 > CSRF_TRUSTED=https://my.site.com, https://super_web.com
+
+### `SESSION_DOMAIN`
+
+Define el alcance de las cookies dentro de los dominios y subdominios del frontend y la API.
+
+_Por defecto, en desarrollo se obvia localhost_
+
+> Ejemplo
+>
+> \# url frontend -> https://dasboard.super-web.com
+>
+> \# url de la API -> https://api.super-web.com
+>
+> SESSION_DOMAIN=.super-web.com
 
 ## PostgreSQL
 
@@ -135,3 +153,17 @@ _Por defecto este tiene la terminación `auth/discord/callback/`_
 >
 > DISCORD_REDIRECT_URI=http://localhost:8000/auth/discord/callback/
 > DISCORD_REDIRECT_URI=http://my.backend.com/auth/discord/callback/
+
+## Frontend
+
+### `FRONTEND_URL`
+
+URL del cliente frontend.
+
+_Por defecto, en desarrollo toma el valor de "http://localhost:5173"_
+
+### `FRONTEND_AUTH_CALLBACK_URL`
+
+Ruta callback de autenticación.
+
+_Por defecto, toma el valor de "/auth/callback"_

@@ -52,8 +52,8 @@ class TestDiscordAuth:
             url = reverse("discord_callback")
             response = client.get(url, {"code": "fake_code"})
 
-            assert response.status_code == 200
-            assert response.json()["username"] == "testUser"
+            assert response.status_code == 302
+            assert "/auth/callback" in response.url
 
             assert User.objects.filter(username="testUser").exists()
 
@@ -61,14 +61,16 @@ class TestDiscordAuth:
         def test_discord_callback_invalid_code(self, mock_post: MagicMock):
             """Test the discord callback view with an invalid code."""
 
-            mock_post.return_value.json.return_value = {"error": "invalid_grant"}
+            from requests import RequestException
+
+            mock_post.side_effect = RequestException("Token exchange failed")
 
             client = Client()
             url = reverse("discord_callback")
             response = client.get(url, {"code": "wrong_code"})
 
-            assert response.status_code == 400
-            assert response.json()["error"] == "invalid_grant"
+            assert response.status_code == 302
+            assert "error=token_exchange_failed" in response.url
 
         @patch("apps._auth.views.post")
         @patch("apps._auth.views.get")
@@ -88,8 +90,8 @@ class TestDiscordAuth:
             url = reverse("discord_callback")
             response = client.get(url, {"code": "fake_code"})
 
-            assert response.status_code == 200
-            assert response.json()["username"] == "testUser"
+            assert response.status_code == 302
+            assert "/auth/callback" in response.url
 
             assert User.objects.filter(username="testUser").count() == 1
 
@@ -100,4 +102,5 @@ class TestDiscordAuth:
             url = reverse("discord_callback")
             response = client.get(url)
 
-            assert response.status_code == 400
+            assert response.status_code == 302
+            assert "error=missing_code" in response.url
