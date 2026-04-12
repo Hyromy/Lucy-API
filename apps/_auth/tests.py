@@ -104,3 +104,45 @@ class TestDiscordAuth:
 
             assert response.status_code == 302
             assert "error=missing_code" in response.url
+
+    class TestSession:
+        def test_auth_me_unauthenticated(self):
+            """Test auth_me when the user is not logged in."""
+
+            client = Client()
+            url = reverse("auth_me")
+            response = client.get(url)
+
+            assert response.status_code == 200
+            assert response.json() == {"authenticated": False}
+
+        def test_auth_me_authenticated(self):
+            """Test auth_me when the user is logged in."""
+
+            user = User.objects.create_user(username="testuser")
+            client = Client()
+            client.force_login(user)
+
+            url = reverse("auth_me")
+            response = client.get(url)
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["authenticated"] is True
+            assert data["username"] == "testuser"
+
+        def test_auth_logout(self):
+            """Test the logout view."""
+
+            user = User.objects.create_user(username="testuser")
+            client = Client()
+            client.force_login(user)
+
+            assert "_auth_user_id" in client.session
+
+            url = reverse("auth_logout")
+            response = client.post(url)
+
+            assert response.status_code == 200
+            assert response.json() == {"ok": True, "was_authenticated": True}
+            assert "_auth_user_id" not in client.session
