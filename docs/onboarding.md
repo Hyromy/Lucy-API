@@ -45,6 +45,7 @@ El proyecto dispone de la estructura estándar de Django, a continuación se det
 - `apps/`: Núcleo lógico del proyecto.
   - `_auth/`: Mecanismos de autenticación mediante OAuth2.
   - `api/`: Modelos y serializadores de la API RESTFUL.
+  - `discord/`: Puente a la API de discord.
 - `docs/`: Documentación detallada del proyecto.
 - `project/`: Configuraciones generales del proyecto.
   - `config.py`: Configuraciones de variables de entorno.

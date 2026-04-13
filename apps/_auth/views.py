@@ -1,11 +1,14 @@
 import logging
 
+from django.db import transaction
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect
-from django.views.decorators.csrf import ensure_csrf_cookie, get_token
+from django.views.decorators.csrf import get_token
 from requests import RequestException, get, post
+
+from apps.discord.models import Member
 
 from project.config import config
 
@@ -13,12 +16,17 @@ logger = logging.getLogger(__name__)
 
 
 def discord_login(request) -> HttpResponseRedirect:
+    scope = [
+        "identify",
+        "guilds",
+    ]
+
     auth_url = (
         f"https://discord.com/api/oauth2/authorize"
         f"?client_id={config.DISCORD_CLIENT_ID}"
         f"&redirect_uri={config.DISCORD_REDIRECT_URI}"
         f"&response_type=code"
-        f"&scope=identify"
+        f"&scope={'%20'.join(scope)}"
     )
     return redirect(auth_url)
 
@@ -59,6 +67,7 @@ def discord_callback(request: HttpRequest) -> HttpResponseRedirect:
 
     token_json = response.json()
     access_token = token_json.get("access_token")
+    refresh_token = token_json.get("refresh_token")
     if not access_token:
         return redirect(append_redirect("no_access_token"))
 
@@ -66,14 +75,28 @@ def discord_callback(request: HttpRequest) -> HttpResponseRedirect:
     if not user_json or "username" not in user_json:
         return redirect(append_redirect("user_fetch_failed"))
 
-    user, _ = User.objects.get_or_create(
-        username=user_json["username"],
-    )
+    try:
+        with transaction.atomic():
+            user, _ = User.objects.get_or_create(
+                username=user_json["username"],
+            )
+            Member.objects.update_or_create(
+                id=user_json["id"],
+                defaults={
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "user": user,
+                },
+            )
+    except Exception as e:
+        logger.exception("Database error during Discord OAuth callback", exc_info=e)
+        return redirect(append_redirect("transaction_failed"))
 
-    login(request, user)
-    get_token(request)
+    else:
+        login(request, user)
+        get_token(request)
 
-    return redirect(append_redirect())
+        return redirect(append_redirect())
 
 
 def _fetch_discord_user(access_token: str) -> dict | None:
@@ -89,21 +112,6 @@ def _fetch_discord_user(access_token: str) -> dict | None:
     except RequestException:
         logger.exception("Discord OAuth user data fetch failed")
         return None
-
-
-@ensure_csrf_cookie
-def auth_me(request: HttpRequest) -> JsonResponse:
-    if not request.user.is_authenticated:
-        return JsonResponse({"authenticated": False}, status=200)
-
-    return JsonResponse(
-        {
-            "authenticated": True,
-            "id": request.user.id,
-            "username": request.user.username,
-            "first_name": request.user.first_name,
-        }
-    )
 
 
 def auth_logout(request: HttpRequest) -> JsonResponse:
