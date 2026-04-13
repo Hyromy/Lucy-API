@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.api",
     "apps._auth",
+    "apps.discord",
 ]
 
 MIDDLEWARE = [
