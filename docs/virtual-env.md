@@ -10,19 +10,26 @@ Para configurar manualmente dichas variables, crea una copia del archivo `.env.e
   - [Configuración general](#configuración-general)
     - [`PRODUCTION`](#production)
     - [`DJANGO_SECRET_KEY`](#django_secret_key)
+    - [`USE_SSL`](#use_ssl)
     - [`HOSTS`](#hosts)
     - [`CORS_ALLOWED`](#cors_allowed)
     - [`CSRF_TRUSTED`](#csrf_trusted)
+    - [`SESSION_DOMAIN`](#session_domain)
   - [PostgreSQL](#postgresql)
     - [`PG_DB`](#pg_db)
     - [`PG_USER`](#pg_user)
     - [`PG_PASS`](#pg_pass)
     - [`PG_HOST`](#pg_host)
     - [`PG_PORT`](#pg_port)
+  - [Redis](#redis)
+    - [`REDIS_URL`](#redis_url)
   - [Discord](#discord)
     - [`DISCORD_CLIENT_ID`](#discord_client_id)
     - [`DISCORD_CLIENT_SECRET`](#discord_client_secret)
     - [`DISCORD_REDIRECT_URI`](#discord_redirect_uri)
+  - [Frontend](#frontend)
+    - [`FRONTEND_URL`](#frontend_url)
+    - [`FRONTEND_AUTH_CALLBACK_URL`](#frontend_auth_callback_url)
 
 
 ## Configuración general
@@ -36,6 +43,12 @@ _Por defecto, toma el valor de `False`._
 Secret de seguridad para protecciones y criptografía del proyecto. Se recomienda configurar un secret con caracteres combinados y de al menos 50 caracteres de longitud.
 
 _Por defecto, se establece una secret insegura_.
+
+### `USE_SSL`
+
+Indica si se deben forzar el uso de conexiones HTTPS.
+
+_Por defecto, toma el valor de `False`_
 
 ### `HOSTS`
 Hosts permitidos para ser el anfitrión del proyecto. Puede definirse más de uno separandolo por comas (`,`).
@@ -66,6 +79,20 @@ Generalmente se espera tener los mismos valores que [CORS_ALLOWED](#cors_allowed
 >
 > CSRF_TRUSTED=https://my.site.com, https://super_web.com
 
+### `SESSION_DOMAIN`
+
+Define el alcance de las cookies dentro de los dominios y subdominios del frontend y la API.
+
+_Por defecto, en desarrollo se obvia localhost_
+
+> Ejemplo
+>
+> \# url frontend -> https://dasboard.super-web.com
+>
+> \# url de la API -> https://api.super-web.com
+>
+> SESSION_DOMAIN=.super-web.com
+
 ## PostgreSQL
 
 > [!Warning]
@@ -89,6 +116,17 @@ Suele ser `localhost`, una IP o dominio.
 Puerto de la base de datos PostgreSQL.
 
 Suele el `5432`.
+
+## Redis
+
+> [!Warning]
+> Todas las variables de esta sección son obligatorias si el proyecto se ejecuta en modo producción
+
+### `REDIS_URL`
+
+URL de conexión al servidor de Redis. Se utiliza como bus de mensajes para la sincronización en tiempo real (Pub/Sub) entre la API y otros sistemas.
+
+_Por defecto, en desarrollo toma el valor de "redis://localhost:6379/0"_
 
 ## Discord
 
@@ -115,3 +153,17 @@ _Por defecto este tiene la terminación `auth/discord/callback/`_
 >
 > DISCORD_REDIRECT_URI=http://localhost:8000/auth/discord/callback/
 > DISCORD_REDIRECT_URI=http://my.backend.com/auth/discord/callback/
+
+## Frontend
+
+### `FRONTEND_URL`
+
+URL del cliente frontend.
+
+_Por defecto, en desarrollo toma el valor de "http://localhost:5173"_
+
+### `FRONTEND_AUTH_CALLBACK_URL`
+
+Ruta callback de autenticación.
+
+_Por defecto, toma el valor de "/auth/callback"_

@@ -23,16 +23,27 @@ class Settings(BaseSettings):
 
     PRODUCTION: bool = False
     DJANGO_SECRET_KEY: str = Field(default="insecure-secret")
+    USE_SSL: bool = False
 
     HOSTS: Union[List[str], str] = Field(default=["*"])
     CORS_ALLOWED: Union[List[str], str] = Field(default=[])
     CSRF_TRUSTED: Union[List[str], str] = Field(default=[])
+    SESSION_DOMAIN: Optional[str] = Field(default=None)
 
     PG_DB: Optional[str] = None
     PG_USER: Optional[str] = None
     PG_PASS: Optional[str] = None
     PG_HOST: str = "localhost"
     PG_PORT: int = 5432
+
+    REDIS_URL: Optional[str] = Field(default="redis://localhost:6379/0")
+
+    DISCORD_CLIENT_ID: Optional[str] = Field(default="")
+    DISCORD_CLIENT_SECRET: Optional[str] = Field(default="")
+    DISCORD_REDIRECT_URI: Optional[str] = Field(default="")
+
+    FRONTEND_URL: Optional[str] = Field(default="http://localhost:5173")
+    FRONTEND_AUTH_CALLBACK_URL: str = Field(default="/auth/callback")
 
     @property
     def is_debug(self) -> bool:
@@ -44,7 +55,7 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             if not v.strip():
                 return ["*"] if info.field_name == "HOSTS" else []
-            return [item.strip() for item in v.split(",")]
+            return [item.strip() for item in v.split(",") if item.strip()]
         return v or []
 
     @field_validator("DJANGO_SECRET_KEY")
@@ -62,6 +73,28 @@ class Settings(BaseSettings):
         if info.data.get("PRODUCTION") and v is None:
             raise ValueError(f"{info.field_name} must be set in production")
         return v
+
+    @field_validator("SESSION_DOMAIN")
+    @classmethod
+    def validate_session_domain(cls, v: Optional[str], info) -> Optional[str]:
+        if info.data.get("PRODUCTION") and v is None:
+            raise ValueError("SESSION_DOMAIN must be set in production for subdomains to work")
+        return v
+
+    @field_validator("REDIS_URL")
+    @classmethod
+    def validate_redis_url(cls, v: Optional[str], info) -> Optional[str]:
+        if info.data.get("PRODUCTION") and "localhost" in v:
+            raise ValueError("REDIS_URL must be set in production")
+        return v
+
+    @field_validator("FRONTEND_URL")
+    @classmethod
+    def validate_frontend_url(cls, v: Optional[str], info) -> Optional[str]:
+        if info.data.get("PRODUCTION"):
+            if not v or "localhost" in v:
+                raise ValueError("FRONTEND_URL must be a real domain in production")
+        return v or "http://localhost:5173"
 
 
 config = Settings()

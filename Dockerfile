@@ -7,9 +7,13 @@ WORKDIR /home/app
 
 RUN useradd -m -u 1000 appuser
 
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir poetry
 
 COPY --chown=appuser:appuser pyproject.toml poetry.lock* ./
+
+RUN mkdir -p /home/app/staticfiles \
+    && chown -R appuser:appuser /home/app/staticfiles
 
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --only main --no-root
