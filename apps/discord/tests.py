@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import Client
 from django.urls import reverse
+from requests import RequestException
 
 from .models import Member
 
@@ -157,3 +158,41 @@ class TestDiscordViews:
         assert second.status_code == 200
         assert first.json() == second.json()
         assert mock_ask.call_count == 1
+
+    @patch("apps.discord.views._ask_to_discord")
+    def test_guilds_get_one_success(
+        self, mock_ask: MagicMock, client: Client, auth_user: User, member: Member
+    ):
+        """Should return a specific guild by ID."""
+
+        mock_ask.return_value = [
+            {"id": "123", "name": "Guild 1", "owner": True},
+            {"id": "456", "name": "Guild 2", "owner": True},
+        ]
+        client.force_login(auth_user)
+        response = client.get(reverse("discord_guilds_get_one", kwargs={"id": "123"}))
+
+        assert response.status_code == 200
+        assert response.json()["id"] == "123"
+
+    def test_guilds_no_member_record(self, client: Client, auth_user: User):
+        """Should return 404 if user is logged in but has no Member record."""
+
+        client.force_login(auth_user)
+        response = client.get(reverse("discord_guilds"))
+
+        assert response.status_code == 404
+
+    @patch("apps.discord.views.get")
+    def test_ask_to_discord_failure(
+        self, mock_get: MagicMock, client: Client, auth_user: User, member: Member
+    ):
+        """Should handle Discord API request exceptions gracefully."""
+
+        mock_get.side_effect = RequestException("API Down")
+
+        client.force_login(auth_user)
+        response = client.get(reverse("discord_me"))
+
+        assert response.status_code == 200
+        assert response.json()["authenticated"] is True
