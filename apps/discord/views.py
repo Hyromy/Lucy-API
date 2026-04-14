@@ -40,6 +40,7 @@ def me(request: HttpRequest) -> JsonResponse:
             "id",
             "username",
         }
+
         return {
             key: value for key, value in data.items() if key in allowed_fields and value is not None
         }
@@ -57,20 +58,15 @@ def me(request: HttpRequest) -> JsonResponse:
     return JsonResponse(data, status=200)
 
 
-@login_required
-def guilds(request: HttpRequest) -> JsonResponse:
+def _request_all_guilds(member: Member) -> list[dict]:
+    """Request all guilds from Discord API and filter them to include only those where the user is an owner or has admin permissions."""
+
     def filter_by_owner_or_admin(guilds: list[dict]) -> list[dict]:
         return [
             guild
             for guild in guilds
             if guild.get("owner") or (int(guild.get("permissions", 0)) & 0x20)
         ]
-
-    user: User = request.user
-    member = Member.objects.filter(user=user).first()
-
-    if not member:
-        return JsonResponse([], safe=False)
 
     cache_key = f"discord_guilds_{member.id}"
     data = cache.get(cache_key)
@@ -80,4 +76,32 @@ def guilds(request: HttpRequest) -> JsonResponse:
         data = filter_by_owner_or_admin(raw_guilds)
         cache.set(cache_key, data, timeout=300)
 
-    return JsonResponse(data, status=200, safe=False)
+    return data
+
+
+@login_required
+def guilds(request: HttpRequest) -> JsonResponse:
+    user: User = request.user
+    member = Member.objects.filter(user=user).first()
+
+    if not member:
+        return JsonResponse([], safe=False, status=404)
+
+    return JsonResponse(_request_all_guilds(member), status=200, safe=False)
+
+
+@login_required
+def guilds_get_one(request: HttpRequest, id: str) -> JsonResponse:
+    user: User = request.user
+    member = Member.objects.filter(user=user).first()
+
+    if not member:
+        return JsonResponse({"error": "User is not linked to a Discord account."}, status=404)
+
+    guilds = _request_all_guilds(member)
+    guild = next((g for g in guilds if g.get("id") == id), None)
+
+    if guild is None:
+        return JsonResponse({"error": "Guild not found or user does not have access."}, status=404)
+
+    return JsonResponse(guild, status=200)
