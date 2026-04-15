@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch, MagicMock
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -13,13 +14,49 @@ from .gossiper import event_name, redis_payload
 
 @pytest.fixture
 def sample_guilds(db):
-    Language.objects.create(code="en", name="English")
-    es = Language.objects.create(code="es", name="Spanish")
+    en, _ = Language.objects.get_or_create(code="en", defaults={"name": "English"})
+    es, _ = Language.objects.get_or_create(code="es", defaults={"name": "Spanish"})
     return [
-        Guild.objects.create(id=123456789),
-        Guild.objects.create(id=987654321),
+        Guild.objects.create(id=123456789, lang=en),
+        Guild.objects.create(id=987654321, lang=en),
         Guild.objects.create(id=555555555, lang=es),
     ]
+
+
+@pytest.mark.django_db
+class TestEventsAPI:
+    def setup_method(self):
+        self.client = APIClient()
+        self.url = "/api/events/"
+
+        self.patch_redis_client = patch("apps.api.views.redis_client")
+        self.mock_redis = self.patch_redis_client.start()
+
+    def teardown_method(self):
+        self.patch_redis_client.stop()
+
+    def test_events_endpoint_headers(self):
+        """Test that the events endpoint returns the correct headers for SSE."""
+
+        response = self.client.get(self.url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response["Content-Type"] == "text/event-stream"
+        assert response["Cache-Control"] == "no-cache"
+        assert response["X-Accel-Buffering"] == "no"
+
+    def test_events_stream_initial_message(self):
+        """Test that the events stream yields the initial connection message."""
+
+        mock_pubsub = MagicMock()
+        self.mock_redis.pubsub.return_value = mock_pubsub
+        mock_pubsub.listen.return_value = []
+
+        response = self.client.get(self.url)
+
+        content = b"".join(response.streaming_content).decode()
+        assert "status" in content
+        assert "connected" in content
 
 
 @pytest.mark.django_db
@@ -28,6 +65,16 @@ class TestGuildAPI:
         self.client = APIClient()
         self.url = "/api/guilds/"
         self.user = User.objects.create_user(username="testuser", password="password")
+
+        self.patch_redis_client = patch("apps.api.views.redis_client")
+        self.patch_publish = patch("apps.api.views.publish_on_redis")
+
+        self.mock_redis = self.patch_redis_client.start()
+        self.mock_publish = self.patch_publish.start()
+
+    def teardown_method(self):
+        self.patch_redis_client.stop()
+        self.patch_publish.stop()
 
     def test_list_guilds(self, sample_guilds):
         """Test that the API returns a list of guilds."""
@@ -104,6 +151,9 @@ class TestGuildAPI:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["id"] == str(guild.id)
         assert response.data["lang"]["code"] == data["lang"]
+
+        # Verify that an event was published to Redis
+        assert self.mock_publish.called
 
     def test_delete_guild(self, sample_guilds):
         """Test that the API can delete a guild."""

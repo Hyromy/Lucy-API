@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from . import serializers
 from .gossiper import redis_payload, publish_on_redis, event_name
 from .models import (
     Guild,
@@ -41,7 +42,7 @@ class GuildAdmin(admin.ModelAdmin):
                 event,
                 (
                     redis_payload(**self.redis_payload_keys(event, obj, request))
-                    | obj.redis_payload()
+                    | serializers.GuildSerializer(obj).data
                 ),
             )
 
