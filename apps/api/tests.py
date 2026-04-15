@@ -6,15 +6,19 @@ from django.contrib.auth.models import User
 
 from .models import (
     Guild,
+    Language,
 )
+from .gossiper import event_name, redis_payload
 
 
 @pytest.fixture
 def sample_guilds(db):
+    Language.objects.create(code="en", name="English")
+    es = Language.objects.create(code="es", name="Spanish")
     return [
-        Guild.objects.create(id=123456789, name="Test Guild 1"),
-        Guild.objects.create(id=987654321, name="Test Guild 2"),
-        Guild.objects.create(id=555555555, name="Test Guild 3", lang="es"),
+        Guild.objects.create(id=123456789),
+        Guild.objects.create(id=987654321),
+        Guild.objects.create(id=555555555, lang=es),
     ]
 
 
@@ -40,9 +44,8 @@ class TestGuildAPI:
         response = self.client.get(f"{self.url}{guild.id}/")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["id"] == guild.id
-        assert response.data["name"] == guild.name
-        assert response.data["lang"] == guild.lang
+        assert response.data["id"] == str(guild.id)
+        assert response.data["lang"]["code"] == guild.lang.code
         assert response.data["joined_at"] == guild.joined_at.isoformat().replace("+00:00", "Z")
 
     def test_get_nonexistent_guild(self):
@@ -55,25 +58,23 @@ class TestGuildAPI:
     def test_create_guild(self):
         """Test that the API can create a new guild."""
 
+        Language.objects.get_or_create(code="en", defaults={"name": "English"})
         self.client.force_authenticate(user=self.user)
 
         data = {
-            "id": 111111111,
-            "name": "New Test Guild",
+            "id": "111111111",
+            "lang": "en",
         }
         response = self.client.post(self.url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["id"] == data["id"]
-        assert response.data["name"] == data["name"]
-        assert response.data["lang"] == "en"
+        assert response.data["lang"]["code"] == "en"
 
     def test_create_guild_without_authentication(self):
         """Test that the API requires authentication to create a guild."""
 
-        response = self.client.post(
-            self.url, {"id": 222222222, "name": "Unauthorized Guild"}, format="json"
-        )
+        response = self.client.post(self.url, {"id": "222222222", "lang": "en"}, format="json")
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -84,7 +85,7 @@ class TestGuildAPI:
 
         existing_guild = sample_guilds[0]
         response = self.client.post(
-            self.url, {"id": existing_guild.id, "name": "Duplicate Guild"}, format="json"
+            self.url, {"id": str(existing_guild.id), "lang": "en"}, format="json"
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -96,15 +97,13 @@ class TestGuildAPI:
 
         guild = sample_guilds[0]
         data = {
-            "name": "Updated Guild Name",
             "lang": "es",
         }
         response = self.client.patch(f"{self.url}{guild.id}/", data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["id"] == guild.id
-        assert response.data["name"] == data["name"]
-        assert response.data["lang"] == data["lang"]
+        assert response.data["id"] == str(guild.id)
+        assert response.data["lang"]["code"] == data["lang"]
 
     def test_delete_guild(self, sample_guilds):
         """Test that the API can delete a guild."""
@@ -126,7 +125,7 @@ class TestGuildAPI:
         original_version = guild.version
 
         data = {
-            "name": "Version Increment Test",
+            "lang": "es",
         }
         response = self.client.patch(f"{self.url}{guild.id}/", data, format="json")
 
@@ -142,9 +141,42 @@ class TestGuildAPI:
         original_updated_at = guild.updated_at
 
         data = {
-            "name": "Updated At Field Test",
+            "lang": "es",
         }
         response = self.client.patch(f"{self.url}{guild.id}/", data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["updated_at"] != original_updated_at.isoformat().replace("+00:00", "Z")
+
+
+class TestGossiper:
+    def test_event_name_valid(self):
+        """Test that event_name returns the correct string for valid inputs."""
+
+        assert event_name("guild", "created") == "lucy.guild.created"
+        assert event_name("language", "updated") == "lucy.language.updated"
+        assert event_name("guild", "deleted") == "lucy.guild.deleted"
+
+    def test_event_name_invalid_model(self):
+        """Test that event_name raises ValueError for an invalid model."""
+
+        with pytest.raises(ValueError, match="Invalid value: invalid_model"):
+            event_name("invalid_model", "created")
+
+    def test_event_name_invalid_event(self):
+        """Test that event_name raises ValueError for an invalid event."""
+
+        with pytest.raises(ValueError, match="Invalid value: invalid_event"):
+            event_name("guild", "invalid_event")
+
+    def test_redis_payload(self):
+        """Test that redis_payload returns a dictionary with the correct structure."""
+
+        data = {
+            "event": "guild.created",
+            "version": 1,
+            "updated_at": "2024-01-01T00:00:00Z",
+            "source": "api",
+        }
+        payload = redis_payload(**data)
+        assert payload == data

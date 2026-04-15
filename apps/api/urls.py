@@ -5,4 +5,8 @@ from . import views
 router = DefaultRouter()
 router.register(r"guilds", views.GuildViewSet)
 
-urlpatterns = [path("", include(router.urls)), path("health/", views.health_check)]
+urlpatterns = [
+    path("", include(router.urls)),
+    path("langs/", views.langs),
+    path("health/", views.health_check),
+]
