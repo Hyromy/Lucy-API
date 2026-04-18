@@ -3,7 +3,7 @@ from django.http import StreamingHttpResponse
 from json import dumps as json_dumps
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from . import models, serializers
@@ -36,7 +36,6 @@ def _event_stream():
         pubsub.close()
 
 
-@permission_classes([IsAuthenticated])
 def events(request):
     """Endpoint for streaming guild update events. Clients can connect to this endpoint to receive real-time updates."""
 
@@ -77,7 +76,6 @@ class GuildViewSet(viewsets.ModelViewSet):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
 def langs(request):
     languages = models.Language.objects.all()
     serializer = serializers.LanguageSerializer(languages, many=True)
