@@ -43,7 +43,7 @@ Se necesita una instalación de __Python 3.12__ para ejecutar el proyecto, adem�
 El proyecto dispone de la estructura estándar de Django, a continuación se detallan solo las carpetas y archivos relevantes.
 
 - `apps/`: Núcleo lógico del proyecto.
-  - `_auth/`: Mecanismos de autenticación mediante OAuth2.
+  - `_auth/`: Mecanismos de autenticación mediante OAuth2 y JWT.
   - `api/`: Modelos y serializadores de la API RESTFUL.
   - `discord/`: Puente a la API de discord.
 - `docs/`: Documentación detallada del proyecto.

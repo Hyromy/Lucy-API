@@ -15,6 +15,7 @@ class GuildSerializer(serializers.ModelSerializer):
     lang = serializers.SlugRelatedField(
         slug_field="code",
         queryset=models.Language.objects.all(),
+        required=False,
     )
 
     class Meta:
