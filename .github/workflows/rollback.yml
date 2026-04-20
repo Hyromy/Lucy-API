@@ -41,28 +41,35 @@ jobs:
             echo "${{ secrets.DOCKER_TOKEN }}" | \
               docker login -u "${{ vars.DOCKER_USER }}" --password-stdin
 
-            docker stop ${{ vars.DOCKER_CONTAINER }} || true
-            docker rm ${{ vars.DOCKER_CONTAINER }} || true
-
-            docker pull ${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:${{ github.event.inputs.image_tag }}
+            docker stop ${{ vars.DOCKER_IMAGE }}-app || true
+            docker rm ${{ vars.DOCKER_IMAGE }}-app || true
+            docker pull ${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:latest
 
             NETWORK_ARGS=""
             if [ -n "${{ vars.DOCKER_NETWORK }}" ]; then
               NETWORK_ARGS="--network ${{ vars.DOCKER_NETWORK }}"
             fi
 
-            docker run -d --name '${{ vars.DOCKER_CONTAINER }}' \
+            docker run -d --name '${{ vars.DOCKER_IMAGE }}-app' \
               -e 'PRODUCTION=True' \
+              -e 'USE_SSL=True' \
               -e 'DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}' \
               -e 'HOSTS=${{ vars.HOSTS }}' \
-              -e 'CORS_ALLOWED=${{ vars.CORS_ALLOWED }}' \
-              -e 'CSRF_TRUSTED=${{ vars.CSRF_TRUSTED }}' \
+              -e 'CORS_ALLOWED=${{ vars.FRONTEND_ALLOWED }}' \
+              -e 'CSRF_TRUSTED=${{ vars.FRONTEND_ALLOWED }}' \
               -e 'PG_DB=${{ vars.PG_DB }}' \
               -e 'PG_USER=${{ secrets.PG_USER }}' \
               -e 'PG_PASS=${{ secrets.PG_PASS }}' \
               -e 'PG_HOST=${{ vars.PG_HOST }}' \
-              -e 'PG_PORT=${{ vars.PG_PORT }}' \
+              -e 'PG_PORT=5432' \
+              -e 'SESSION_DOMAIN=${{ vars.SESSION_DOMAIN }}' \
+              -e 'REDIS_URL=${{ vars.REDIS_URL }}' \
+              -e 'DISCORD_CLIENT_ID=${{ vars.DISCORD_CLIENT_ID }}' \
+              -e 'DISCORD_CLIENT_SECRET=${{ secrets.DISCORD_CLIENT_SECRET }}' \
+              -e 'DISCORD_REDIRECT_URI=${{ vars.DISCORD_REDIRECT_URI }}' \
+              -e 'FRONTEND_URL=${{ vars.FRONTEND_URL }}' \
+              -e 'FRONTEND_AUTH_CALLBACK_URL=${{ vars.FRONTEND_AUTH_CALLBACK_URL }}' \
               -p '${{ vars.DOCKER_HOST_PORT }}:8000' \
               --restart unless-stopped \
               $NETWORK_ARGS \
-              '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:${{ github.event.inputs.image_tag }}'
+              '${{ vars.DOCKER_USER }}/${{ vars.DOCKER_IMAGE }}:latest'
