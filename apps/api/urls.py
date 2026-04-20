@@ -1,25 +1,13 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from . import views
 
-from .views import (
-    health,
-    bot,
-    dashboard
-)
+router = DefaultRouter()
+router.register(r"guilds", views.GuildViewSet)
 
 urlpatterns = [
-    path("", health.HealthCheckView.as_view()),
-]
-
-urlpatterns += [
-    path(f"dashboard/{d['route']}", d['view']) for d in [
-        {"route": "guild/", "view": dashboard.GuildView.as_view()},
-        {"route": "guild/<int:id>/", "view": dashboard.GuildView.as_view()},
-    ]
-]
-
-urlpatterns += [
-    path(f"bot/{b['route']}", b['view']) for b in [
-        {"route": "guild/", "view": bot.GuildView.as_view()},
-        {"route": "guild/<int:id>", "view": bot.GuildView.as_view()},
-    ]
+    path("", include(router.urls)),
+    path("langs/", views.langs),
+    path("health/", views.health_check),
+    path("events/", views.events),
 ]

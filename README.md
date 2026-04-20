@@ -1,120 +1,43 @@
-# Lucy Rest
+# Lucy API
 
-API REST con Django Rest Framework para [Lucy](https://github.com/Hyromy/Lucy)
+API Restful para Lucy Project
 
-![Django](https://img.shields.io/badge/Django-6.0-green?logo=django)
-![DRF](https://img.shields.io/badge/DRF-3.16.1-red?logo=django)
-![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
-![Docker](https://img.shields.io/badge/Docker-Container-blue?logo=docker)
+![Django](https://img.shields.io/badge/Django-092E20?logo=django&logoColor=white)
+![DRF](https://img.shields.io/badge/DRF-A30000?logo=django&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-FF4438?logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+![Poetry](https://img.shields.io/badge/Poetry-60A5FA?logo=poetry&logoColor=white)
 
-## Índice
-- [Lucy Rest](#lucy-rest)
-  - [Índice](#índice)
-  - [Estructura del proyecto](#estructura-del-proyecto)
-  - [Variables de entrono](#variables-de-entrono)
-  - [Despliegue](#despliegue)
-    - [Local](#local)
-    - [Docker](#docker)
+## Inicio Rápido
 
-## Estructura del proyecto
-
-Se posee una estructura típica de un proyecto de Django
-
-```sh
-app/                  # aplicación principal
-├── migrations/       # migraciones
-│
-├── models.py         # modelos
-├── serializers.py    # serializadores
-├── urls.py           # rutas de aplicación
-└── views.py          # enpoints
-
-project/              # proyecto principal
-├── settings.py       # configuración del proyecto
-└── urls.py           # rutas
-
-manage.py             # script de comandos Django
-requirements.txt      # dependencias
-```
-
-## Variables de entrono
-
-Aunque el proyecto puede funcionar sin establecer ninguna variable de entorno, puedes configurar el `.env` con las variables de entorno disponibles.
-
-| Clave | Valor por defecto | Descripción |
-| - | - | - |
-| `PRODUCTION` | `False` | Establece si el modo es de producción |
-| `DJANGO_SECRET_KEY` | `"secret"` | Secret de seguridad |
-| `PG_DB` | `"postgres"` | Base de datos PostgreSQL |
-| `PG_USER` | `"postgres"` | Usuario de PostgreSQL |
-| `PG_PASS` | `"postgres"` | Contraseña de PostgreSQL |
-| `PG_HOST` | `"localhost"` | Host de PostgreSQL |
-| `PG_POST` | `5432` | Puerto de PostgreSQL |
-| `SUPERUSER_USERNAME` | `Admin` | Super usuario de la aplicación |
-| `SUPERUSER_PASSWORD` | `Admin123` | Contraseña del super usuario |
-| `DISCORD_CLIENT_ID` | `None` | Id de cliente de discord de autenticación |
-| `DISCORD_CLIENT_SECRET` | `None` | Secret de cliente de discord de autenticación |
-| `FRONTEND_URL_ENDPOINT` | `"auth/callback"` | Ruta de redirección de autenticación |
-| `DEV_DISCORD_BOT_TOKEN` | `None` | Token de bot de discord de desarrollo |
-| `PRO_DISCORD_BOT_TOKEN` | `None` | Token de bot de discord de producción |
-
-## Despliegue
-
-### Local
-
-1. Entorno virtual
-   
-   Crea un entorno virtual, como ejemplo se usa el módulo `venv`.
+1. Clonar repositorio
    ```sh
-   py -m venv env
+   git clone https://github.com/Hyromy/Lucy.git    # https
+   git clone git@github.com:Hyromy/Lucy.git        # ssh
+
+   cd Lucy-API
    ```
 
-   Activa el entorno virtual.
+2. Instalar dependencias
    ```sh
-   .\env\Scripts\activate     # Windows
+   poetry install
+   poetry shell
    ```
 
-2. Dependencias
-   
-   Instala las [dependencias](./requirements.txt).
+3. Aplicar migraciones
    ```sh
-   pip install -r requirements.txt
+   python manage.py migrate
    ```
 
-3. Migraciones
-   
-   Aplica las migraciones.
+4. Ejecutar servidor
    ```sh
-   py manage.py migrate
+   python manage.py runserver
    ```
 
-4. Creación de super usuario
-
-   Crea un super usuario con [create_super_user.py](./create_super_user.py). Puedes configurar otro usuario por defecto con las claves `SUPERUSER_USERNAME` y `SUPERUSER_PASSWORD`
-   ```bash
-   py create_super_user.py
-   ```
-
-El proyecto se ejecuta en el puerto `8000` pero puedes especificar otro.
-
-```sh
-py manage.py runserver          # port 8000
-
-py manage.py runserver 7001     # port 7001
-```
-
----
-
-### Docker
-
-Puedes construir una imagen y contenedor con el [Dockerfile](./Dockerfile).
-```sh
-docker build -t app_image .
-
-docker run --name app_container -p 8000:8000 app_image
-```
-
-Por último puedes ejecutar un entorno pre-producción sin ninguna [variable de entorno](#variables-de-entrono).
-```sh
-docker compose up
-```
+## Documentación adicional
+- [Manual de desarrollador](./docs/onboarding.md)
+- [Manual de operaciones](./docs/runbook.md)
+- [Problemas comunes](./docs/troubleshooting.md)
+- [Variables de entorno](./docs/virtual-env.md)

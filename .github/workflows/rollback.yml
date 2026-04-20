@@ -1,20 +1,35 @@
-name: Deploy in VPS
+name: Rollback in VPS
 
 on:
   workflow_dispatch:
-
-  workflow_run:
-    workflows: ["Push Docker Image"]
-    types:
-      - completed
+    inputs:
+      image_tag:
+        description: "Docker image tag to deploy (example: 26.04.03-12-a1b2c3d)"
+        required: true
 
 jobs:
-  deploy_latest:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+  validate_tag:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy latest image to VPS
+      - name: Validate image tag input
+        run: |
+          if [ -z "${{ github.event.inputs.image_tag }}" ]; then
+            echo "image_tag is required."
+            exit 1
+          fi
+
+          if [ "${{ github.event.inputs.image_tag }}" = "latest" ]; then
+            echo "Using 'latest' for rollback is not allowed. Provide a fixed image tag."
+            exit 1
+          fi
+
+  rollback:
+    needs: validate_tag
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy selected image tag to VPS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ vars.VPS_HOST }}

@@ -1,20 +1,19 @@
-name: Deploy in VPS
+name: Deploy by Tag (Reusable)
 
 on:
-  workflow_dispatch:
-
-  workflow_run:
-    workflows: ["Push Docker Image"]
-    types:
-      - completed
+  workflow_call:
+    inputs:
+      image_tag:
+        description: Docker image tag to deploy
+        required: true
+        type: string
 
 jobs:
-  deploy_latest:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy latest image to VPS
+      - name: Deploy selected image tag to VPS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ vars.VPS_HOST }}

@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class AppConfig(AppConfig):
-    name = 'apps.api'
+class ApiConfig(AppConfig):
+    name = "apps.api"
