@@ -78,6 +78,7 @@ class TestGuildAPI:
 
     def test_list_guilds(self, sample_guilds):
         """Test that the API returns a list of guilds."""
+        self.client.force_authenticate(user=self.user)
 
         response = self.client.get(self.url)
 
@@ -86,6 +87,7 @@ class TestGuildAPI:
 
     def test_get_guild(self, sample_guilds):
         """Test that the API returns a single guild by ID."""
+        self.client.force_authenticate(user=self.user)
 
         guild = sample_guilds[0]
         response = self.client.get(f"{self.url}{guild.id}/")
@@ -97,6 +99,7 @@ class TestGuildAPI:
 
     def test_get_nonexistent_guild(self):
         """Test that the API returns a 404 for a non-existent guild."""
+        self.client.force_authenticate(user=self.user)
 
         response = self.client.get(f"{self.url}999999999/")
 

@@ -20,7 +20,7 @@ class GuildAdmin(admin.ModelAdmin):
         return {
             "event": event,
             "version": instance.version,
-            "updated_at": instance.updated_at.isoformat(),
+            "updated_at": instance.updated_at.isoformat() if instance.updated_at else None,
             "source": "admin panel",
         }
 
@@ -36,15 +36,26 @@ class GuildAdmin(admin.ModelAdmin):
 
         super().save_model(request, obj, form, change)
 
-        if change:
-            event = event_name("guild", "updated")
-            publish_on_redis(
-                event,
-                (
-                    redis_payload(**self.redis_payload_keys(event, obj, request))
-                    | serializers.GuildSerializer(obj).data
-                ),
-            )
+        event_type = "updated" if change else "created"
+        event = event_name("guild", event_type)
+
+        publish_on_redis(
+            event,
+            (
+                redis_payload(**self.redis_payload_keys(event, obj, request))
+                | serializers.GuildSerializer(obj).data
+            ),
+        )
+
+    def delete_model(self, request, obj: Guild):
+        data = serializers.GuildSerializer(obj).data
+        event = event_name("guild", "deleted")
+
+        super().delete_model(request, obj)
+
+        publish_on_redis(
+            event, (redis_payload(**self.redis_payload_keys(event, obj, request)) | data)
+        )
 
 
 admin.site.register(Language)
