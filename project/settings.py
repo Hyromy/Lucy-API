@@ -3,6 +3,7 @@ from .config import config
 from logging import Filter as LoggingFilter
 from utils.logger import get_request_id
 from datetime import timedelta
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -168,16 +169,16 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = config.CSRF_TRUSTED
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-
     SECURE_CONTENT_TYPE_NOSNIFF = True
-
     SECURE_REFERRER_POLICY = "same-origin"
+
+    if any("lucy-api-app" in arg for arg in sys.argv) or "lucy-api-app" in ALLOWED_HOSTS:
+        SECURE_SSL_REDIRECT = False
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 class RequestIDLogFilter(LoggingFilter):
