@@ -1,6 +1,6 @@
 [project]
 name = "Lucy-API"
-version = "0.2.0"
+version = "0.3.0"
 description = "Api rest for lucy project"
 authors = [
     {name = "Hyromy",email = "formulajoel9@gmail.com"}

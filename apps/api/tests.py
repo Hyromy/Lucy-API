@@ -121,6 +121,34 @@ class TestGuildAPI:
         assert response.data["id"] == data["id"]
         assert response.data["lang"]["code"] == "en"
 
+    def test_create_guild_publishes_event(self):
+        """Test that creating a guild publishes a redis event with correct payload."""
+
+        Language.objects.get_or_create(code="en", defaults={"name": "English"})
+        self.client.force_authenticate(user=self.user)
+
+        data = {
+            "id": "111111111",
+            "lang": "en",
+        }
+        response = self.client.post(self.url, data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        # Verify that publish_on_redis was called
+        assert self.mock_publish.called
+
+        # Verify the event name and payload structure
+        call_args = self.mock_publish.call_args
+        event_name_arg = call_args[0][0]
+        payload = call_args[0][1]
+
+        assert event_name_arg == "lucy.guild.created"
+        assert payload["event"] == "lucy.guild.created"
+        assert payload["version"] == 1
+        assert "updated_at" in payload
+        assert "source" in payload
+        assert payload["id"] == "111111111"
+
     def test_create_guild_without_authentication(self):
         """Test that the API requires authentication to create a guild."""
 
@@ -158,6 +186,33 @@ class TestGuildAPI:
         # Verify that an event was published to Redis
         assert self.mock_publish.called
 
+    def test_update_guild_publishes_event_with_version(self, sample_guilds):
+        """Test that updating a guild publishes a redis event with incremented version."""
+
+        self.client.force_authenticate(user=self.user)
+
+        guild = sample_guilds[0]
+        original_version = guild.version
+        data = {
+            "lang": "es",
+        }
+        response = self.client.patch(f"{self.url}{guild.id}/", data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        # Verify that publish_on_redis was called
+        assert self.mock_publish.called
+
+        # Verify the event name and payload structure
+        call_args = self.mock_publish.call_args
+        event_name_arg = call_args[0][0]
+        payload = call_args[0][1]
+
+        assert event_name_arg == "lucy.guild.updated"
+        assert payload["event"] == "lucy.guild.updated"
+        assert payload["version"] == original_version + 1
+        assert "updated_at" in payload
+        assert "source" in payload
+
     def test_delete_guild(self, sample_guilds):
         """Test that the API can delete a guild."""
 
@@ -167,6 +222,33 @@ class TestGuildAPI:
         response = self.client.delete(f"{self.url}{guild.id}/")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Guild.objects.filter(id=guild.id).exists()
+
+    def test_delete_guild_publishes_event(self, sample_guilds):
+        """Test that deleting a guild publishes a redis event with correct payload."""
+
+        self.client.force_authenticate(user=self.user)
+
+        guild = sample_guilds[0]
+        original_version = guild.version
+        response = self.client.delete(f"{self.url}{guild.id}/")
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        # Verify that publish_on_redis was called
+        assert self.mock_publish.called
+
+        # Verify the event name and payload structure
+        call_args = self.mock_publish.call_args
+        event_name_arg = call_args[0][0]
+        payload = call_args[0][1]
+
+        assert event_name_arg == "lucy.guild.deleted"
+        assert payload["event"] == "lucy.guild.deleted"
+        assert payload["version"] == original_version
+        assert "updated_at" in payload
+        assert "source" in payload
+
+        # Verify guild was actually deleted
         assert not Guild.objects.filter(id=guild.id).exists()
 
     def test_update_version_increment(self, sample_guilds):
@@ -184,6 +266,28 @@ class TestGuildAPI:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["version"] == original_version + 1
+
+    def test_redis_payload_includes_custom_source(self, sample_guilds):
+        """Test that redis payload captures the X-Source header as source."""
+
+        self.client.force_authenticate(user=self.user)
+
+        guild = sample_guilds[0]
+        custom_source = "external_service"
+        data = {
+            "lang": "es",
+        }
+        response = self.client.patch(
+            f"{self.url}{guild.id}/", data, format="json", HTTP_X_SOURCE=custom_source
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        # Verify that the custom source was included in the payload
+        call_args = self.mock_publish.call_args
+        payload = call_args[0][1]
+
+        assert payload["source"] == custom_source
 
     def test_update_at_field(self, sample_guilds):
         """Test that the updated_at field updates on update."""

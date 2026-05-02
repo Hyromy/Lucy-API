@@ -60,6 +60,17 @@ class GuildViewSet(viewsets.ModelViewSet):
             "source": self.request.headers.get("X-Source", "api request"),
         }
 
+    def perform_create(self, serializer: serializers.GuildSerializer):
+        instance: models.Guild = serializer.save()
+        event = event_name("guild", "created")
+        publish_on_redis(
+            event,
+            (
+                redis_payload(**self._redis_payload_keys(event, instance))
+                | serializers.GuildSerializer(instance).data
+            ),
+        )
+
     def perform_update(self, serializer: serializers.GuildSerializer):
         instance: models.Guild = serializer.save()
         instance.version += 1
@@ -73,6 +84,18 @@ class GuildViewSet(viewsets.ModelViewSet):
                 | serializers.GuildSerializer(instance).data
             ),
         )
+
+    def perform_destroy(self, instance: models.Guild):
+        event = event_name("guild", "deleted")
+        publish_on_redis(
+            event,
+            (
+                redis_payload(**self._redis_payload_keys(event, instance))
+                | serializers.GuildSerializer(instance).data
+            ),
+        )
+
+        super().perform_destroy(instance)
 
 
 @api_view(["GET"])
